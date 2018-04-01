@@ -249,6 +249,7 @@ def Part1():
     orig_stdout = sys.stdout
     f = open('out.txt', 'w')
     sys.stdout = f
+    
     env.render()
     env.step(0)
     env.render()
