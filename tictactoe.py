@@ -160,6 +160,14 @@ def compute_returns(rewards, gamma=1.0):
     [-2.5965000000000003, -2.8850000000000002, -2.6500000000000004, -8.5, -10.0]
     """
     # TODO
+    t = 0
+    G = 0
+    for reward in rewards:
+        G += gamma^t*reward
+        t += 1
+
+    return G
+
 
 def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
     """Samples an action from the policy at the state."""
