@@ -168,7 +168,6 @@ def compute_returns(rewards, gamma=1.0):
             G[n] += (gamma**(i-n))*rewards[i]
         n+=1
 
-
     return G
 
 
@@ -190,11 +189,11 @@ def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
 def get_reward(status):
     """Returns a numeric given an environment status."""
     return {
-            Environment.STATUS_VALID_MOVE  : 0, # TODO
-            Environment.STATUS_INVALID_MOVE: 0,
-            Environment.STATUS_WIN         : 0,
+            Environment.STATUS_VALID_MOVE  :  25, # TODO
+            Environment.STATUS_INVALID_MOVE:  -75,
+            Environment.STATUS_WIN         :  100,
             Environment.STATUS_TIE         : 0,
-            Environment.STATUS_LOSE        : 0
+            Environment.STATUS_LOSE        : -100
     }[status]
 
 def train(policy, env, gamma=1.0, log_interval=1000):
@@ -204,17 +203,22 @@ def train(policy, env, gamma=1.0, log_interval=1000):
             optimizer, step_size=10000, gamma=0.9)
     running_reward = 0
 
+    num_invalid_moves = 0
     for i_episode in count(1):
         saved_rewards = []
         saved_logprobs = []
         state = env.reset()
         done = False
+
         while not done:
             action, logprob = select_action(policy, state)
             state, status, done = env.play_against_random(action)
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
+
+        if -50 in saved_rewards:
+            num_invalid_moves += 1
 
         R = compute_returns(saved_rewards)[0]
         running_reward += R
@@ -225,6 +229,8 @@ def train(policy, env, gamma=1.0, log_interval=1000):
             print('Episode {}\tAverage return: {:.2f}'.format(
                 i_episode,
                 running_reward / log_interval))
+            print("Number of Invalid Moves in Last {} Episodes: ".format(log_interval), num_invalid_moves)
+            num_invalid_moves = 0
             running_reward = 0
 
         if i_episode % (log_interval) == 0:
@@ -258,6 +264,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         # `python tictactoe.py` to train the agent
         train(policy, env)
+
     else:
         # `python tictactoe.py <ep>` to print the first move distribution
         # using weightt checkpoint at episode int(<ep>)
