@@ -188,11 +188,11 @@ def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
 def get_reward(status):
     """Returns a numeric given an environment status."""
     return {
-            Environment.STATUS_VALID_MOVE  :  0,    # 0
-            Environment.STATUS_INVALID_MOVE:  -150,  # -75
-            Environment.STATUS_WIN         :  100,  # 100
-            Environment.STATUS_TIE         : 0,     # 0
-            Environment.STATUS_LOSE        : -100   # 100
+            Environment.STATUS_VALID_MOVE  :    0,    
+            Environment.STATUS_INVALID_MOVE: -150, 
+            Environment.STATUS_WIN         :  100,
+            Environment.STATUS_TIE         :    0,   
+            Environment.STATUS_LOSE        : -100
     }[status]
 
 def train(policy, env, gamma=0.75, log_interval=1000):
