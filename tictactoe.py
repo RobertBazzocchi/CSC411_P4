@@ -163,7 +163,7 @@ def compute_returns(rewards, gamma=1.0):
     t = 0
     G = 0
     for reward in rewards:
-        G += gamma^t*reward
+        G += (gamma**t)*reward
         t += 1
 
     return G
