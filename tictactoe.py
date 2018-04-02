@@ -114,8 +114,8 @@ class Policy(nn.Module):
         #   with the first argument in the definition being the number of nodes in layer l
         #   and the next argument being the number of nodes in layer l+1
 
-        self.fc1 = torch.nn.Linear(27, 64)
-        self.fc2 = torch.nn.Linear(64, 9)
+        self.fc1 = torch.nn.Linear(input_size, hidden_size)
+        self.fc2 = torch.nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
 
@@ -238,43 +238,6 @@ def load_weights(policy, episode):
     weights = torch.load("ttt/policy-%d.pkl" % episode)
     policy.load_state_dict(weights)
 
-def Part1():
-    """
-    FUNCTION:
-        Plays a hard-coded game of tic-tac-toe and writes the visualized game state of each step
-        to a .txt file. 
-    """
-    env = Environment()
-
-    orig_stdout = sys.stdout
-    f = open('out.txt', 'w')
-    sys.stdout = f
-    
-    env.render()
-    env.step(0)
-    env.render()
-    env.step(4)
-    env.render()
-    env.step(1)
-    env.render()
-    env.step(2)
-    env.render()
-    env.step(6)
-    env.render()
-    env.step(5)
-    env.render()
-    env.step(3)
-    env.render()
-
-    if env.turn == 1:
-        winner = 2
-    else:
-        winner = 1
-
-    print("Player {} has won the game.".format(winner))
-
-    sys.stdout = orig_stdout
-    f.close()
 
 if __name__ == '__main__':
     import sys
@@ -292,4 +255,3 @@ if __name__ == '__main__':
         print(first_move_distr(policy, env))
 
 # _________________ RUN PARTS OF CODE _________________ 
-# Part1()
