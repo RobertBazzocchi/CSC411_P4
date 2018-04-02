@@ -160,11 +160,14 @@ def compute_returns(rewards, gamma=1.0):
     [-2.5965000000000003, -2.8850000000000002, -2.6500000000000004, -8.5, -10.0]
     """
     # TODO
-    t = 0
-    G = 0
-    for reward in rewards:
-        G += (gamma**t)*reward
-        t += 1
+    n = 0
+    G = []
+    while n < len(rewards):
+        G.append(0)  
+        for i in range(n,len(rewards)):
+            G[n] += (gamma**(i-n))*rewards[i]
+        n+=1
+
 
     return G
 
