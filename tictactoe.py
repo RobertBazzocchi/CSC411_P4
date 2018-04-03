@@ -189,14 +189,26 @@ def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
 def get_reward(status):
     """Returns a numeric given an environment status."""
     return {
-            Environment.STATUS_VALID_MOVE  :  25, # TODO
-            Environment.STATUS_INVALID_MOVE:  -75,
-            Environment.STATUS_WIN         :  100,
-            Environment.STATUS_TIE         : 0,
-            Environment.STATUS_LOSE        : -100
+            Environment.STATUS_VALID_MOVE  : 1,
+            Environment.STATUS_INVALID_MOVE: -250,
+            Environment.STATUS_WIN         : 500,
+            Environment.STATUS_TIE         : -3,
+            Environment.STATUS_LOSE        : -3
     }[status]
 
-def train(policy, env, gamma=1.0, log_interval=1000):
+    '''
+
+    Gets to 0 eventually
+    return {
+            Environment.STATUS_VALID_MOVE  :  1, # TODO
+            Environment.STATUS_INVALID_MOVE:  -1000,
+            Environment.STATUS_WIN         :  30,
+            Environment.STATUS_TIE         : -5,
+            Environment.STATUS_LOSE        : -10
+    }[status]
+    '''
+
+def train(policy, env, gamma=0.75, log_interval=1000):
     """Train policy gradient."""
     optimizer = optim.Adam(policy.parameters(), lr=0.001)
     scheduler = torch.optim.lr_scheduler.StepLR(
@@ -217,7 +229,7 @@ def train(policy, env, gamma=1.0, log_interval=1000):
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
 
-        if -50 in saved_rewards:
+        if -250 in saved_rewards:
             num_invalid_moves += 1
 
         R = compute_returns(saved_rewards)[0]
