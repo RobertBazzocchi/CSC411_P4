@@ -84,11 +84,13 @@ class Environment(object):
         move = random.choice(pos)
         return self.step(move)
 
-    def play_against_random(self, action):
+    def play_against_random(self, action, display_game=False):
         """Play a move, and then have a random agent play the next move."""
         state, status, done = self.step(action)
+        if display_game: env.render()
         if not done and self.turn == 2:
             state, s2, done = self.random_step()
+            if display_game: env.render()
             if done:
                 if s2 == self.STATUS_WIN:
                     status = self.STATUS_LOSE
@@ -102,7 +104,7 @@ class Policy(nn.Module):
     """
     The Tic-Tac-Toe Policy
     """
-    def __init__(self, input_size=27, hidden_size=64, output_size=9):
+    def __init__(self, input_size=27, hidden_size=500, output_size=9):
         super(Policy, self).__init__()
 
         ######### CODE ADDED BELOW ######### 
@@ -151,15 +153,7 @@ def compute_returns(rewards, gamma=1.0):
       @param gamma: the discount factor
       @returns list of floats representing the episode's returns
           G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + ... 
-
-    >>> compute_returns([0,0,0,1], 1.0)
-    [1.0, 1.0, 1.0, 1.0]
-    >>> compute_returns([0,0,0,1], 0.9)
-    [0.7290000000000001, 0.81, 0.9, 1.0]
-    >>> compute_returns([0,-0.5,5,0.5,-10], 0.9)
-    [-2.5965000000000003, -2.8850000000000002, -2.6500000000000004, -8.5, -10.0]
     """
-    # TODO
     n = 0
     G = []
     while n < len(rewards):
@@ -187,12 +181,12 @@ def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
 
 def get_reward(status):
     """Returns a numeric given an environment status."""
-    return {
-            Environment.STATUS_VALID_MOVE  :    0,    
-            Environment.STATUS_INVALID_MOVE: -150, 
+    return {                                       # commented values are best for wins/losses ratio
+            Environment.STATUS_VALID_MOVE  :    0, 
+            Environment.STATUS_INVALID_MOVE: -150, # -100
             Environment.STATUS_WIN         :  100,
             Environment.STATUS_TIE         :    0,   
-            Environment.STATUS_LOSE        : -100
+            Environment.STATUS_LOSE        : -100  # -200
     }[status]
 
 def train(policy, env, gamma=0.75, log_interval=1000):
@@ -203,19 +197,30 @@ def train(policy, env, gamma=0.75, log_interval=1000):
     running_reward = 0
 
     num_invalid_moves = 0
+    num_wins = 0
+    num_losses = 0
+    num_ties = 0
+
     for i_episode in count(1):
         saved_rewards = []
         saved_logprobs = []
         state = env.reset()
         done = False
 
-        if i_episode % log_interval == 0: print(select_action(policy,state)[0])
+        # if i_episode % log_interval == 0: print(select_action(policy,state)[0])
         while not done:
             action, logprob = select_action(policy, state)
             state, status, done = env.play_against_random(action)
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
+
+        if status == "win":
+            num_wins += 1
+        if status == "lose":
+            num_losses += 1
+        if status == "tie":
+            num_ties += 1
 
         if -150 in saved_rewards:
             num_invalid_moves += 1
@@ -229,8 +234,8 @@ def train(policy, env, gamma=0.75, log_interval=1000):
             print('Episode {}\tAverage return: {:.2f}'.format(
                 i_episode,
                 running_reward / log_interval))
-            print("Number of Invalid Moves in Last {} Episodes: ".format(log_interval), num_invalid_moves)
-            num_invalid_moves = 0
+            print("Wins: {}, Losses: {}, Ties: {}, Invalid Moves: {}\n".format(num_wins,num_losses,num_ties,num_invalid_moves))
+            num_wins,num_losses,num_ties,num_invalid_moves = 0,0,0,0
             running_reward = 0
 
         if i_episode % (log_interval) == 0:
@@ -241,6 +246,10 @@ def train(policy, env, gamma=0.75, log_interval=1000):
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad()
+
+        # STOP AFTER 50000 ITERATIONS
+        if i_episode == 50000:
+            break
 
 def first_move_distr(policy, env):
     """Display the distribution of first moves."""
@@ -255,6 +264,44 @@ def load_weights(policy, episode):
     weights = torch.load("ttt/policy-%d.pkl" % episode)
     policy.load_state_dict(weights)
 
+def test(policy,env):
+    """ 
+    Test the policy on 100 games and output the wins, losses, and ties for all games.
+    Additionally, display 5 of these games.
+    """
+    wins = 0
+    losses = 0
+    ties = 0
+    game_num = 1
+
+    n = 100
+    while n > 0:
+        state = env.reset()
+        done = False
+        display_game = False
+
+        if n % 20 == 0:
+            display_game = True
+            print("________________________________")
+            print("GAME {} DISPLAYED".format(game_num))
+            game_num += 1
+            env.render()
+
+        while not done:
+            action, logprob = select_action(policy, state)
+            state, status, done = env.play_against_random(action,display_game)
+
+        if status == "win":
+            wins += 1
+        if status == "lose":
+            losses += 1
+        if status == "tie":
+            ties += 1
+
+        n -= 1
+
+    print("Wins: {}, Losses: {}, Ties: {}".format(wins,losses,ties))
+    return wins, losses, ties
 
 if __name__ == '__main__':
     import sys
@@ -264,6 +311,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         # `python tictactoe.py` to train the agent
         train(policy, env)
+        test(policy,env)
 
     else:
         # `python tictactoe.py <ep>` to print the first move distribution
@@ -272,4 +320,8 @@ if __name__ == '__main__':
         load_weights(policy, ep)
         print(first_move_distr(policy, env))
 
-# _________________ RUN PARTS OF CODE _________________ 
+"""
+Use your learned policy to play 100 games against random. How many did your agent 
+win / lose / tie? Display five games that your trained agent plays against the random policy.
+Explain any strategies that you think your agent has learned.
+"""
