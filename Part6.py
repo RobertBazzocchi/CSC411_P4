@@ -26,14 +26,14 @@ def train(policy, env, gamma=0.75, log_interval=1000):
         done = False
 
         # if i_episode % log_interval == 0: print(select_action(policy,state)[0])
+        
         while not done:
             action, logprob = select_action(policy, state)
             state, status, done = env.play_against_random(action)
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
-            if len(saved_rewards) > 1000:
-                break
+
 
         if status == "win":
             num_wins += 1

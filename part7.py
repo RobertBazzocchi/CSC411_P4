@@ -69,17 +69,16 @@ def train(policy, env, gamma=0.75, log_interval=1000):
 
         # STOP AFTER 50000 ITERATIONS
         if i_episode == 50000:
-	        first_move_data = first_move_data[1:,:]
-	        print(episode_data.shape)
-	        print(first_move_data[:,0].shape)
-	        for i in range(9):
-	            plt.plot(episode_data,first_move_data[:,i])
-	            plt.xlabel('Episodes')
-	            plt.ylabel('Probability')
-	            plt.title('Probability Distribution of {} being the first move'\
-	            	.format(i))
-	            plt.show()
-	        break
+            first_move_data = first_move_data[1:,:]
+            print(first_move_data[-1,:])
+            for i in range(9):
+                plt.plot(episode_data,first_move_data[:,i])
+                plt.xlabel('Episodes')
+                plt.ylabel('Probability')
+                plt.title('Probability Distribution of {} being the first move'\
+                	.format(i))
+                plt.show()
+            break
 
 if __name__ == '__main__':
     import sys
