@@ -11,6 +11,9 @@ import torch.optim as optim
 import torch.distributions
 from torch.autograd import Variable
 
+global Invalid_reward
+Invalid_reward = -150
+
 class Environment(object):
     """
     The Tic-Tac-Toe Environment
@@ -184,33 +187,11 @@ def get_reward(status):
 
     return {                   
             Environment.STATUS_VALID_MOVE  :    0, 
-            Environment.STATUS_INVALID_MOVE: -150, # -100
+            Environment.STATUS_INVALID_MOVE: Invalid_reward, #-150, # -100
             Environment.STATUS_WIN         :  100,
             Environment.STATUS_TIE         :    0,   
-            Environment.STATUS_LOSE        : -100  # -200
+            Environment.STATUS_LOSE        : -200  # -200
     }[status]
-
-    '''
-    #commented values are from the graph sweeps
-    return {
-            Environment.STATUS_VALID_MOVE  : 1,
-            Environment.STATUS_INVALID_MOVE: -250,
-            Environment.STATUS_WIN         : 500,
-            Environment.STATUS_TIE         : -3,
-            Environment.STATUS_LOSE        : -3
-    }[status]
-
-    
-    # commented values are best for wins/losses ratio
-    Gets to 0 eventually
-    return {
-            Environment.STATUS_VALID_MOVE  :  1, # TODO
-            Environment.STATUS_INVALID_MOVE:  -1000,
-            Environment.STATUS_WIN         :  30,
-            Environment.STATUS_TIE         : -5,
-            Environment.STATUS_LOSE        : -10
-    }[status]
-    '''
 
 
 def train(policy, env, gamma=0.75, log_interval=1000):
@@ -238,6 +219,8 @@ def train(policy, env, gamma=0.75, log_interval=1000):
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
+            if len(saved_rewards) > 1000:
+                break
 
         if status == "win":
             num_wins += 1
@@ -245,9 +228,10 @@ def train(policy, env, gamma=0.75, log_interval=1000):
             num_losses += 1
         if status == "tie":
             num_ties += 1
-
-        if -150 in saved_rewards:
-            num_invalid_moves += 1
+        
+        for reward in saved_rewards:
+            if reward == Invalid_reward:
+                num_invalid_moves += 1
 
         R = compute_returns(saved_rewards)[0]
         running_reward += R
@@ -296,7 +280,9 @@ def test(policy,env):
     wins = 0
     losses = 0
     ties = 0
+    num_invalid_moves = 0
     game_num = 1
+
 
     n = 100
     while n > 0:
@@ -311,9 +297,12 @@ def test(policy,env):
             game_num += 1
             env.render()
 
+        saved_rewards = []
         while not done:
             action, logprob = select_action(policy, state)
             state, status, done = env.play_against_random(action,display_game)
+            reward = get_reward(status)
+            saved_rewards.append(reward)
 
         if status == "win":
             wins += 1
@@ -322,9 +311,15 @@ def test(policy,env):
         if status == "tie":
             ties += 1
 
+        for reward in saved_rewards:
+            if reward == Invalid_reward:
+                num_invalid_moves += 1
+
         n -= 1
 
-    print("Wins: {}, Losses: {}, Ties: {}".format(wins,losses,ties))
+
+    print("Wins: {}, Losses: {}, Ties: {}, Invalid: {}" \
+        .format(wins,losses,ties,num_invalid_moves))
     return wins, losses, ties
 
 if __name__ == '__main__':
